@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'email',
             'phone',
-            'role'
+            'role',
         ]
 
 class RideEventSerializer(serializers.ModelSerializer):
@@ -19,16 +19,29 @@ class RideEventSerializer(serializers.ModelSerializer):
         model = RideEvent
         fields = [
             'id',
+            'ride',
             'description',
-            'created_at'
+            'created_at',
         ]
 
 class RideSerializer(serializers.ModelSerializer):
-    events = RideEventSerializer(many=True, read_only=True)
+    rider = UserSerializer(read_only=True)
+    driver = UserSerializer(read_only=True)
+    todays_ride_events = serializers.SerializerMethodField()
 
     class Meta:
         model = Ride
-        fields = '__all__'
+        fields = [
+            'status',
+            'rider',
+            'driver',
+            'pickup_latitude',
+            'pickup_longitude',
+            'dropoff_latitude',
+            'dropoff_longitude',
+            'pickup_datetime',
+            'todays_ride_events',
+        ]
         
     def validate(self, data):
         """
@@ -48,3 +61,7 @@ class RideSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Rider and driver cannot be the same user.")
 
         return data
+
+    def get_todays_ride_events(self, obj):
+        return RideEventSerializer(obj.todays_events, many=True).data
+
