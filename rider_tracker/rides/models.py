@@ -16,7 +16,15 @@ class User(AbstractUser):
 
 
 class Ride(models.Model):
-    status = models.CharField(max_length=120)
+    STATUS_CHOICES = [
+        ('accepted', 'Accepted'),
+        ('en-route', 'En-route'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+        ('pickup', 'Pickup'),
+        ('dropoff', 'Dropoff'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     rider = models.ForeignKey(User, on_delete=models.PROTECT, related_name='rider_rides')
     driver = models.ForeignKey(User, on_delete=models.PROTECT, related_name='driver_rides')
     pickup_latitude = models.FloatField()

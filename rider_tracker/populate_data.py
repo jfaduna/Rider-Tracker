@@ -59,7 +59,7 @@ for i in range(10):
     dropoff_lat = 6.55 + random.uniform(0, 0.05)
     dropoff_lng = 3.40 + random.uniform(0, 0.05)
     pickup_time = timezone.now() + timedelta(hours=random.randint(-24, 24))
-    status = random.choice(['requested', 'accepted', 'started', 'completed', 'cancelled'])
+    status = random.choice(['accepted', 'en-route', 'completed', 'cancelled', 'pickup', 'dropoff'])
 
     ride, created = Ride.objects.get_or_create(
         rider=rider,
