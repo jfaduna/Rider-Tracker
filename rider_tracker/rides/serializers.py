@@ -45,13 +45,12 @@ class RideEventSerializer(serializers.ModelSerializer):
         ]
 
 class RideSerializer(serializers.ModelSerializer):
-    rider = UserSerializer(read_only=True)
-    driver = UserSerializer(read_only=True)
     todays_ride_events = serializers.SerializerMethodField()
 
     class Meta:
         model = Ride
         fields = [
+            'id',
             'status',
             'rider',
             'driver',
@@ -83,7 +82,7 @@ class RideSerializer(serializers.ModelSerializer):
         return data
 
     def get_todays_ride_events(self, obj):
-        return RideEventSerializer(obj.todays_events, many=True).data
+        return RideEventSerializer(obj.events, many=True).data
 
     def update(self, instance, validated_data):
         new_status = validated_data.pop("status", None)
