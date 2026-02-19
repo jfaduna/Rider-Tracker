@@ -83,6 +83,23 @@ class RideSerializer(serializers.ModelSerializer):
 
     def get_todays_ride_events(self, obj):
         return RideEventSerializer(obj.events, many=True).data
+    
+    def create(self, validated_data):
+        if validated_data.get('status') != 'accepted':
+            raise serializers.ValidationError({'status': f"Ride status must be 'accepted' first"})
+
+        instance = super().create(validated_data)
+        RideEvent.objects.create(
+            ride=instance,
+            description="Ride has been Accepted"
+        )
+
+        return instance
+
+class RideStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ride
+        fields = ["status"]
 
     def update(self, instance, validated_data):
         new_status = validated_data.pop("status", None)
@@ -95,5 +112,22 @@ class RideSerializer(serializers.ModelSerializer):
         # status handled separately
         if new_status and new_status != instance.status:
             instance.change_status(new_status)
+
+        status_event_map = {
+            "accepted": "Ride has been Accepted",
+            "en-route": "Driver is en route",
+            "pickup": "Rider picked up",
+            "dropoff": "Rider dropped off",
+            "completed": "Ride completed",
+            "cancelled": "Ride cancelled",
+        }
+
+        description = status_event_map.get(instance.status)
+
+        if description:
+            RideEvent.objects.create(
+                ride=instance,
+                description=description
+            )
 
         return instance

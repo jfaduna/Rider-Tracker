@@ -1,3 +1,5 @@
+from rest_framework import serializers
+
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -34,6 +36,15 @@ class Ride(models.Model):
         'cancelled': [],
     }
     
+    status_event_map = {
+        "accepted": "Ride has been Accepted",
+        "en-route": "Driver is en route",
+        "pickup": "Rider picked up",
+        "dropoff": "Rider dropped off",
+        "completed": "Ride completed",
+        "cancelled": "Ride cancelled",
+    }
+    
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     rider = models.ForeignKey(User, on_delete=models.PROTECT, related_name='rider_rides')
     driver = models.ForeignKey(User, on_delete=models.PROTECT, related_name='driver_rides')
@@ -48,16 +59,16 @@ class Ride(models.Model):
         allowed = self.VALID_TRANSITIONS.get(old_status, [])
 
         if new_status not in allowed:
-            raise ValidationError(
-                f"Invalid status transition from {old_status} to {new_status}"
-            )
+            raise serializers.ValidationError({
+                "status": f"Invalid status transition from {old_status} to {new_status}",
+            })
 
         self.status = new_status
         self.save(update_fields=["status"])
 
         RideEvent.objects.create(
             ride=self,
-            description=f"status changed from {old_status} to {new_status}"
+            description=self.status_event_map.get(self.status)
         )
 
 
