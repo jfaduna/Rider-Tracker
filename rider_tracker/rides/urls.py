@@ -25,6 +25,9 @@ urlpatterns = [
             'patch': 'partial_update',
             'delete': 'destroy',
         }), name='ride-detail'),
+    path('rides/<int:pk>/status/', RideViewSet.as_view({
+        'patch': 'update_status',
+    }), name='ride-status'),
     # Ride Events
     path('ride-events/', RideEventViewSet.as_view({
         'get': 'list',

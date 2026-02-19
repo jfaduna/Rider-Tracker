@@ -1,6 +1,9 @@
 from datetime import timedelta
+from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from django.db.models import F, Prefetch
 from django.db.models.functions import Power
@@ -9,7 +12,7 @@ from django.utils import timezone
 from rides.pagination import RideEventPagination, RidePagination, UserPagination
 from rides.permissions import IsAdmin
 from .models import Ride, RideEvent, User
-from .serializers import RideSerializer, RideEventSerializer, UserSerializer
+from .serializers import RideSerializer, RideEventSerializer, UserSerializer, RideStatusSerializer
 
 
 class UserViewSet(ModelViewSet):
@@ -81,6 +84,13 @@ class RideViewSet(ModelViewSet):
                     pass
 
         return queryset
+    
+    def update_status(self, request, pk=None):
+        ride = self.get_object()
+        serializer = RideStatusSerializer(ride, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)  
 
 
 class RideEventViewSet(ModelViewSet):
