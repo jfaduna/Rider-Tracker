@@ -4,7 +4,7 @@ from .models import User, Ride, RideEvent
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = [
+        fields = (
             'id',
             'username',
             'password',
@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'role',
-        ]
+        )
         
     def create(self, validated_data):
         password = validated_data.pop("password")
@@ -34,6 +34,7 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class RideEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = RideEvent
@@ -43,6 +44,20 @@ class RideEventSerializer(serializers.ModelSerializer):
             'description',
             'created_at',
         ]
+
+
+class UserRideSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'role'
+        ]
+
 
 class RideSerializer(serializers.ModelSerializer):
     todays_ride_events = serializers.SerializerMethodField()
@@ -95,6 +110,19 @@ class RideSerializer(serializers.ModelSerializer):
         )
 
         return instance
+
+    def to_representation(self, instance):
+        """Customize output to show nested rider and driver info"""
+        rep = super().to_representation(instance)
+        
+        
+        if instance.rider:
+            rep['rider'] = UserRideSerializer(instance.rider).data
+
+        if instance.driver:
+            rep['driver'] = UserRideSerializer(instance.driver).data
+        
+        return rep
 
 class RideStatusSerializer(serializers.ModelSerializer):
     class Meta:
