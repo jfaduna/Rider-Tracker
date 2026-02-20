@@ -1,86 +1,123 @@
-import os
-import django
 import random
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password
-
-# -----------------------------
-# Setup Django environment
-# -----------------------------
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "rider_tracker.settings")  # replace with your settings
-django.setup()
-
 from rides.models import User, Ride, RideEvent
 
-# -----------------------------
-# Create Riders
-# -----------------------------
-riders = []
-for i in range(1, 6):
-    user, created = User.objects.get_or_create(
-        username=f'rider{i}',
-        defaults={
-            'email': f'rider{i}@example.com',
-            'role': 'rider',
-            'first_name': f'Rider{i}',
-            'last_name': 'Test',
-            'password': make_password('riderpass123')
-        }
-    )
-    riders.append(user)
 
-# -----------------------------
-# Create Drivers
-# -----------------------------
+status_event_map = {
+    "accepted": "Ride has been Accepted",
+    "en-route": "Driver is en-route",
+    "pickup": "Rider picked up",
+    "dropoff": "Rider dropped off",
+    "completed": "Ride completed",
+    "cancelled": "Ride cancelled",
+}
+
+# Clear old data
+RideEvent.objects.all().delete()
+Ride.objects.all().delete()
+User.objects.all().delete()
+
+# Create Admin
+admin = User.objects.create_superuser(
+    username="admin",
+    password="password",
+    email="admin@test.com",
+    role="admin"
+)
+
+# Realistic driver names
+driver_names = [
+    ("John", "Carter"),
+    ("Tim", "Holland"),
+    ("Ethan", "Brooks"),
+    ("Jane", "Doe"),
+]
+
 drivers = []
-for i in range(1, 6):
-    user, created = User.objects.get_or_create(
-        username=f'driver{i}',
-        defaults={
-            'email': f'driver{i}@example.com',
-            'role': 'driver',
-            'first_name': f'Driver{i}',
-            'last_name': 'Test',
-            'password': make_password('driverpass123')
-        }
-    )
-    drivers.append(user)
-
-# -----------------------------
-# Create 10 Rides
-# -----------------------------
-rides = []
-for i in range(10):
-    rider = random.choice(riders)
-    driver = random.choice(drivers)
-    pickup_lat = 6.5 + random.uniform(0, 0.05)
-    pickup_lng = 3.37 + random.uniform(0, 0.05)
-    dropoff_lat = 6.55 + random.uniform(0, 0.05)
-    dropoff_lng = 3.40 + random.uniform(0, 0.05)
-    pickup_time = timezone.now() + timedelta(hours=random.randint(-24, 24))
-    status = random.choice(['accepted', 'en-route', 'completed', 'cancelled', 'pickup', 'dropoff'])
-
-    ride, created = Ride.objects.get_or_create(
-        rider=rider,
-        driver=driver,
-        pickup_latitude=pickup_lat,
-        pickup_longitude=pickup_lng,
-        dropoff_latitude=dropoff_lat,
-        dropoff_longitude=dropoff_lng,
-        pickup_datetime=pickup_time,
-        status=status
-    )
-    rides.append(ride)
-
-# -----------------------------
-# Create RideEvents
-# -----------------------------
-for ride in rides:
-    for j in range(random.randint(1, 3)):
-        RideEvent.objects.get_or_create(
-            ride=ride,
-            description=f'Event {j+1} for ride {ride.id}',
+for first, last in driver_names:
+    drivers.append(
+        User.objects.create_user(
+            username=f"{first.lower()}.{last.lower()}",
+            first_name=first,
+            last_name=last,
+            password="password",
+            role="driver"
         )
+    )
 
-print("Sample data populated successfully!")
+# Create riders
+riders = []
+for i in range(1, 8):
+    riders.append(
+        User.objects.create_user(
+            username=f"rider{i}",
+            first_name=f"Rider{i}",
+            last_name="User",
+            password="password",
+            role="rider"
+        )
+    )
+
+months = ["2024-01", "2024-02", "2024-03", "2024-04"]
+
+for month in months:
+    year, month_num = map(int, month.split("-"))
+
+    for driver in drivers:
+        # Random rides per driver per month
+        ride_count = random.randint(3, 12)
+
+        for i in range(ride_count):
+            rider = random.choice(riders)
+
+            pickup_time = timezone.make_aware(
+                datetime(year, month_num, random.randint(1, 25), random.randint(6, 20), 0)
+            )
+
+            # Random duration - short and long
+            duration_minutes = random.choice([30, 45, 55, 70, 90, 120])
+            dropoff_time = pickup_time + timedelta(minutes=duration_minutes)
+
+            ride = Ride.objects.create(
+                status="completed",
+                rider=rider,
+                driver=driver,
+                pickup_latitude=14.6 + random.random() / 10,
+                pickup_longitude=121.0 + random.random() / 10,
+                dropoff_latitude=14.5 + random.random() / 10,
+                dropoff_longitude=121.1 + random.random() / 10,
+                pickup_datetime=pickup_time,
+            )
+
+            RideEvent.objects.create(
+                ride=ride,
+                description=status_event_map["accepted"],
+                created_at=pickup_time - timedelta(minutes=10),
+            )
+
+            RideEvent.objects.create(
+                ride=ride,
+                description=status_event_map["en-route"],
+                created_at=pickup_time - timedelta(minutes=5),
+            )
+
+            RideEvent.objects.create(
+                ride=ride,
+                description=status_event_map["pickup"],
+                created_at=pickup_time,
+            )
+
+            RideEvent.objects.create(
+                ride=ride,
+                description=status_event_map["dropoff"],
+                created_at=dropoff_time,
+            )
+
+            RideEvent.objects.create(
+                ride=ride,
+                description=status_event_map["completed"],
+                created_at=dropoff_time + timedelta(minutes=3),
+            )
+
+print("Data population completed")
