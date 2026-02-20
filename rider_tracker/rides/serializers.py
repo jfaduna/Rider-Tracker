@@ -113,21 +113,4 @@ class RideStatusSerializer(serializers.ModelSerializer):
         if new_status and new_status != instance.status:
             instance.change_status(new_status)
 
-        status_event_map = {
-            "accepted": "Ride has been Accepted",
-            "en-route": "Driver is en route",
-            "pickup": "Rider picked up",
-            "dropoff": "Rider dropped off",
-            "completed": "Ride completed",
-            "cancelled": "Ride cancelled",
-        }
-
-        description = status_event_map.get(instance.status)
-
-        if description:
-            RideEvent.objects.create(
-                ride=instance,
-                description=description
-            )
-
         return instance

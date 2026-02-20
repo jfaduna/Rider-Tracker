@@ -38,7 +38,7 @@ class Ride(models.Model):
     
     status_event_map = {
         "accepted": "Ride has been Accepted",
-        "en-route": "Driver is en route",
+        "en-route": "Driver is en-route",
         "pickup": "Rider picked up",
         "dropoff": "Rider dropped off",
         "completed": "Ride completed",
@@ -65,11 +65,11 @@ class Ride(models.Model):
 
         self.status = new_status
         self.save(update_fields=["status"])
-
-        RideEvent.objects.create(
-            ride=self,
-            description=self.status_event_map.get(self.status)
-        )
+        if old_status != new_status:
+            RideEvent.objects.create(
+                ride=self,
+                description=self.status_event_map.get(self.status)
+            )
 
 
 class RideEvent(models.Model):
