@@ -22,7 +22,7 @@ class UserViewSet(ModelViewSet):
     model = User
     
     def get_queryset(self):
-        return self.model.objects.all()
+        return self.model.objects.all().order_by('-id')
 
 
 class RideViewSet(ModelViewSet):
@@ -82,6 +82,8 @@ class RideViewSet(ModelViewSet):
                     ).order_by('distance')
                 except ValueError:
                     pass
+        else:
+            queryset = queryset.order_by('-id')
 
         return queryset
     
@@ -100,5 +102,5 @@ class RideEventViewSet(ModelViewSet):
     model = RideEvent
 
     def get_queryset(self):
-        return self.model.objects.all()
+        return self.model.objects.all().order_by('-id')
 
