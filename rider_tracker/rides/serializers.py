@@ -97,7 +97,7 @@ class RideSerializer(serializers.ModelSerializer):
         return data
 
     def get_todays_ride_events(self, obj):
-        return RideEventSerializer(obj.events, many=True).data
+        return RideEventSerializer(obj.todays_events, many=True).data
     
     def create(self, validated_data):
         if validated_data.get('status') != 'accepted':
