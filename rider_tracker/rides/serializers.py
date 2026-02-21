@@ -1,3 +1,6 @@
+from datetime import timedelta
+from django.utils import timezone
+
 from rest_framework import serializers
 from .models import User, Ride, RideEvent
 
@@ -97,7 +100,13 @@ class RideSerializer(serializers.ModelSerializer):
         return data
 
     def get_todays_ride_events(self, obj):
-        return RideEventSerializer(obj.todays_events, many=True).data
+        if hasattr(obj, "todays_events"):
+            return RideEventSerializer(obj.todays_events, many=True).data
+
+        # Fallback for POST request
+        last_24h = timezone.now() - timedelta(hours=24)
+        queryset = obj.events.filter(created_at__gte=last_24h)
+        return RideEventSerializer(queryset, many=True).data
     
     def create(self, validated_data):
         if validated_data.get('status') != 'accepted':
